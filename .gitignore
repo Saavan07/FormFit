@@ -1,0 +1,9 @@
+.DS_Store
+DerivedData/
+build/
+*.xcuserdatad/
+*.xcscmblueprint
+*.xccheckout
+*.xcworkspace/xcshareddata/WorkspaceSettings.xcsettings
+.swiftpm/
+.build/

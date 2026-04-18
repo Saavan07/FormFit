@@ -1,111 +1,120 @@
-# FormFit Watch - Core Motion Data Collector
+# FormFit
 
-A minimal watchOS app that records **fused motion** from `CMDeviceMotion` on Apple Watch and saves it to CSV for later analysis.
+FormFit is a watch-first rehabilitation and form-feedback platform built around Apple Watch motion capture, an iPhone companion app, and a lightweight machine learning pipeline for movement-quality scoring.
 
-## Features
+This repository has been updated from the original watch-only collector into a fuller Spring 2026 snapshot of the project: branded phone and watch UI, end-to-end watch-to-phone session transfer, app-side session storage, and the PyTorch-to-Core ML model pipeline used to prepare future in-app scoring.
 
-- Adjustable sampling tick, default **50 ms**, range **10 to 200 ms**
-- Rolling buffer with configurable max size (default ~5k rows)
-- Live readout for accel, gyro, and attitude
-- One tap **Save CSV** to the app Documents directory
+## Highlights
 
-## Why
+- End-to-end Apple Watch motion collection using `CMDeviceMotion`
+- iPhone companion app for receiving transferred sessions and storing them in-app
+- Branded phone and watch UI with synchronized visual language and app icons
+- Data pipeline for collecting, labeling, splitting, and training movement data
+- 1D CNN training workflow with Core ML export included in the repo
+- EOH 2026: FormFit earned **2nd Place in Most Industry Impact** after presenting to **30,000+ attendees**
 
-I needed a simple, reliable way to capture watch motion for prototyping form tracking and model training, without wiring the phone or server yet.
+## System Overview
 
-## How it works
+FormFit currently spans three connected layers:
 
-- Uses `CMMotionManager` **deviceMotion** stream
-- Captures the following per sample:
-  - Linear acceleration `userAcceleration.{x,y,z}` in m/s²
-  - Rotation rate `rotationRate.{x,y,z}` in rad/s
-  - Orientation `attitude.{roll,pitch,yaw}` in radians
-- Keeps:
-  - `latest` for quick UI display
-  - `buffer` for the time series, capped at `maxBuffer`
+1. **Watch collection**
+   The Apple Watch records user acceleration, gyroscope readings, and roll/pitch/yaw orientation data during rehab or strength movements.
 
-### CSV format
+2. **Phone experience**
+   The iPhone app receives session files from the watch, preserves the raw CSV data, and imports sessions into app-owned storage so the data is ready for analysis and future scoring flows.
 
-Header:
-# FormFit Watch - Core Motion Data Collector
+3. **ML pipeline**
+   The `ml/` section contains the training code, labels, split rep files, trained weights, training curve, and exported Core ML package used to support movement-quality scoring.
 
-A minimal watchOS app that records **fused motion** from `CMDeviceMotion` on Apple Watch and saves it to CSV for later analysis.
+## Repository Structure
 
-## Features
+```text
+.
+├── ml/
+│   ├── CNN.py
+│   ├── FormFitModel.mlpackage/
+│   ├── best_model.pth
+│   ├── formfit-data/
+│   ├── formfit-labels.csv
+│   ├── training_history.png
+│   ├── README.md
+│   └── requirements.txt
+├── tools/
+│   └── generate_formfit_icons.swift
+└── watchos/
+    ├── FormFitWatch/
+    │   ├── FormFitPhone/
+    │   ├── FormFitWatch Watch App/
+    │   └── FormFitWatch.xcodeproj
+    └── README.md
+```
 
-- Adjustable sampling tick, default **50 ms**, range **10 to 200 ms**
-- Rolling buffer with configurable max size (default ~5k rows)
-- Live readout for accel, gyro, and attitude
-- One tap **Save CSV** to the app Documents directory
+## What Is Included
 
-## Why
+### Apple Watch + iPhone app
 
-I needed a simple, reliable way to capture watch motion for prototyping form tracking and model training, without wiring the phone or server yet.
+- Watch motion capture flow with start/stop/save controls
+- WatchConnectivity transfer from watch to phone
+- iPhone-side import and persistence of workout sessions
+- UI work for home, workout, progress, profile, tutorial, and leaderboard screens
+- Themed watch and phone styling plus branded FormFit app icons
+- Foundations for future coaching and scoring workflows
 
-## How it works
+### Machine learning workflow
 
-- Uses `CMMotionManager` **deviceMotion** stream
-- Captures the following per sample:
-  - Linear acceleration `userAcceleration.{x,y,z}` in m/s²
-  - Rotation rate `rotationRate.{x,y,z}` in rad/s
-  - Orientation `attitude.{roll,pitch,yaw}` in radians
-- Keeps:
-  - `latest` for quick UI display
-  - `buffer` for the time series, capped at `maxBuffer`
+- Rep-window training data under `ml/formfit-data/`
+- Label file under `ml/formfit-labels.csv`
+- PyTorch CNN training and scoring script in `ml/CNN.py`
+- Trained checkpoint in `ml/best_model.pth`
+- Exported Core ML package in `ml/FormFitModel.mlpackage`
+- Saved training curve in `ml/training_history.png`
 
-### CSV format
+## Running The App
 
-Header:
-idx,timestamp,ax,ay,az,gx,gy,gz,roll,pitch,yaw
+Open the Xcode project at:
 
-Rows:
-- `idx` is a zero based counter within the current buffer
-- `timestamp` is Core Motion timestamp in seconds since the boot reference
-- Other columns are doubles
+`watchos/FormFitWatch/FormFitWatch.xcodeproj`
 
-File name example:
-formfit-YYYYMMDD-HHMMSS-<tickMs>ms.csv
+Then:
 
-## Build and run
+1. Select the `FormFitPhone` scheme if you want the paired iPhone app flow.
+2. Select the watch app scheme if you want to work directly on watch collection.
+3. Run on a real iPhone + Apple Watch pair for sensor collection and transfer testing.
 
-### Requirements
+More detailed notes live in [watchos/README.md](watchos/README.md).
 
-- Apple Watch paired to an iPhone
-- Xcode version that matches your watchOS
-  - watchOS 10.6.1 pairs well with **Xcode 15.4**
-  - watchOS 11 pairs well with **Xcode 16+**
+## Running The ML Pipeline
 
-### Steps
+From the `ml/` directory:
 
-1. Open `FormFitWatch.xcodeproj` in Xcode.
-2. Select the **watch app** scheme.
-3. Choose your **real Apple Watch** as the destination.
-4. Run. Grant Motion permission on first launch.
+```bash
+python3 -m pip install -r requirements.txt
+python3 CNN.py
+```
 
-> The watch simulator will not produce real motion values. Use a device for data.
+That script:
 
-## Configuration
+- loads split rep CSV files
+- trains the 1D CNN
+- saves the best weights
+- writes a training history plot
+- evaluates validation accuracy
+- exports the model as a Core ML package
 
-In `MotionManager.swift`:
-- `tickMs`: sampling interval in milliseconds
-- `maxBuffer`: maximum number of samples to keep before trimming
+More details live in [ml/README.md](ml/README.md).
 
-You can also expose `tickMs` via the UI slider provided.
+## Current Status
 
-## UI
+This repo reflects a strong prototype milestone:
 
-- **Start**, **Stop**, **Clear**, **Save CSV**
-- **Tick** control with label that shows the current ms
-- Optional live metrics block for quick sanity checks
+- collection is working
+- watch-to-phone transfer is working
+- app-side storage is working
+- the UI is far beyond the original blank collector prototype
+- the ML training/export pipeline is present
 
-## Roadmap
+The next major layer is tightening the connection between imported sessions and live in-app scoring / coaching.
 
-- Add WatchConnectivity to transfer CSV to iPhone Files
-- Add session metadata and calibration markers
-- Build a quick visualizer notebook for CSV files
-- Move to a ring buffer for O(1) trimming on long sessions
+## Acknowledgment
 
-## Notes
-
-- Ensure `NSMotionUsageDescription` exists in the target Info so the permission prompt is clear.
-- First install can take a moment while Xcode prepares the device.
+FormFit was built through months of iteration across sensing, UI, data engineering, and model experimentation. This repository is meant to present that work as a cohesive system instead of only the earliest collector prototype.

@@ -70,6 +70,10 @@ final class WorkoutRepetition {
     var rangeOfMotion: Double?
     var concentricTime: Double?
     var eccentricTime: Double?
+    var elbowHikingScore: Double?
+    var shoulderHikingScore: Double?
+    var torsoTwistScore: Double?
+    var formScore: Double?
     var repetitionDate: Date
     var session: WorkoutSession?
     @Relationship(deleteRule: .cascade, inverse: \WorkoutMotionSample.repetition) var samples: [WorkoutMotionSample]
@@ -80,6 +84,10 @@ final class WorkoutRepetition {
         rangeOfMotion: Double? = nil,
         concentricTime: Double? = nil,
         eccentricTime: Double? = nil,
+        elbowHikingScore: Double? = nil,
+        shoulderHikingScore: Double? = nil,
+        torsoTwistScore: Double? = nil,
+        formScore: Double? = nil,
         repetitionDate: Date,
         session: WorkoutSession? = nil,
         samples: [WorkoutMotionSample] = []
@@ -89,6 +97,10 @@ final class WorkoutRepetition {
         self.rangeOfMotion = rangeOfMotion
         self.concentricTime = concentricTime
         self.eccentricTime = eccentricTime
+        self.elbowHikingScore = elbowHikingScore
+        self.shoulderHikingScore = shoulderHikingScore
+        self.torsoTwistScore = torsoTwistScore
+        self.formScore = formScore
         self.repetitionDate = repetitionDate
         self.session = session
         self.samples = samples
@@ -265,12 +277,14 @@ enum WorkoutSessionImporter {
         let durationSeconds = repetitions
             .flatMap(\.samples)
             .compactMap(\.relativeTime)
-            .map(Double.init)
             .max() ?? 0
+
+        let inference = FormFitInference.shared.scoreWorkout(activitySet)
+        let formScore = inference?.workout ?? derivedFormScore(from: repetitions)
 
         let session = WorkoutSession(
             exerciseName: exerciseName,
-            formScore: derivedFormScore(from: repetitions),
+            formScore: formScore,
             durationMinutes: max(1, Int(ceil(durationSeconds / 60.0))),
             workoutDate: activitySet.timestamp,
             sourceFilename: sourceFilename,
@@ -282,11 +296,23 @@ enum WorkoutSessionImporter {
         context.insert(session)
 
         session.repetitions = repetitions.enumerated().map { index, repetition in
+            let repInference = inference?.rep[safe: index]
+            print(
+                "Saving rep \(index + 1) -> " +
+                "elbow: \(String(format: "%.4f", repInference?.elbowHiking ?? -1)), " +
+                "shoulder: \(String(format: "%.4f", repInference?.shoulderHiking ?? -1)), " +
+                "torso: \(String(format: "%.4f", repInference?.torsoTwist ?? -1)), " +
+                "overall: \(String(format: "%.2f", repInference?.overallScore ?? -1))"
+            )
             let storedRepetition = WorkoutRepetition(
                 index: index,
-                rangeOfMotion: repetition.rangeOfMotion.map(Double.init),
-                concentricTime: repetition.concentricTime.map(Double.init),
-                eccentricTime: repetition.eccentricTime.map(Double.init),
+                rangeOfMotion: repetition.rangeOfMotion,
+                concentricTime: repetition.concentricTime,
+                eccentricTime: repetition.eccentricTime,
+                elbowHikingScore: repInference?.elbowHiking,
+                shoulderHikingScore: repInference?.shoulderHiking,
+                torsoTwistScore: repInference?.torsoTwist,
+                formScore: repInference?.overallScore,
                 repetitionDate: repetition.timestamp,
                 session: session
             )
@@ -294,16 +320,16 @@ enum WorkoutSessionImporter {
             storedRepetition.samples = repetition.samples.enumerated().map { sampleIndex, sample in
                 WorkoutMotionSample(
                     index: sampleIndex,
-                    relativeTime: Double(sample.relativeTime ?? 0),
-                    accelerationX: Double(sample.accelerationX),
-                    accelerationY: Double(sample.accelerationY),
-                    accelerationZ: Double(sample.accelerationZ),
-                    gyroX: Double(sample.gyroX),
-                    gyroY: Double(sample.gyroY),
-                    gyroZ: Double(sample.gyroZ),
-                    roll: Double(sample.roll),
-                    pitch: Double(sample.pitch),
-                    yaw: Double(sample.yaw),
+                    relativeTime: sample.relativeTime ?? 0,
+                    accelerationX: sample.accelerationX,
+                    accelerationY: sample.accelerationY,
+                    accelerationZ: sample.accelerationZ,
+                    gyroX: sample.gyroX,
+                    gyroY: sample.gyroY,
+                    gyroZ: sample.gyroZ,
+                    roll: sample.roll,
+                    pitch: sample.pitch,
+                    yaw: sample.yaw,
                     repetition: storedRepetition
                 )
             }
@@ -319,7 +345,6 @@ enum WorkoutSessionImporter {
         let timestamps = activitySet.repetitions
             .flatMap(\.samples)
             .compactMap(\.relativeTime)
-            .map(Double.init)
             .sorted()
 
         guard timestamps.count >= 3 else { return nil }
@@ -343,13 +368,21 @@ enum WorkoutSessionImporter {
         return inferredRate.isFinite && inferredRate > 0 ? inferredRate : nil
     }
 
+    /// Fallback score used only when the Core ML model cannot be loaded
+    /// (e.g. FormFitModel.mlpackage was not added to the phone target).
     private static func derivedFormScore(from repetitions: [Repetition]) -> Int {
         let romValues = repetitions.compactMap(\.rangeOfMotion)
         guard !romValues.isEmpty else { return 0 }
 
-        // Temporary placeholder until the Core ML score replaces this pipeline.
-        let averageROM = romValues.reduce(0, +) / Float(romValues.count)
+        let averageROM = romValues.reduce(0.0, +) / Double(romValues.count)
         return max(0, min(100, Int(averageROM.rounded())))
+    }
+}
+
+private extension Array {
+    subscript(safe index: Int) -> Element? {
+        guard indices.contains(index) else { return nil }
+        return self[index]
     }
 }
 

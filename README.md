@@ -2,7 +2,7 @@
 
 An Apple Watch and iPhone exercise-feedback prototype combining motion collection, session transfer, repetition analysis, and an experimental Core ML scoring model.
 
-This repository began as Saavan Kiran's watch data collector. It now brings together the team's later app, the Python training/export pipeline, and the standalone repetition-segmentation module. It is a collaborative prototype, not a validated medical or rehabilitation product.
+I started this repository with a watch data collector while working on FormFit with my team. It now brings together our later watch and phone app, the Python training and export pipeline, and a standalone repetition-segmentation module. The exercise feedback is still experimental.
 
 ## What is implemented
 
@@ -55,21 +55,21 @@ python -m pytest -q signal-processing
 
 The `ml/` directory contains training code, data, labels, a checkpoint, and an exported model. Its README describes the workflow. Training writes model artifacts, so run it in a separate experiment checkout if you want to preserve the included snapshot. Training and accuracy evaluation were not rerun for this update.
 
-## Contributions
+## My work and the team
 
-FormFit was developed with the [muvaro2/FormFit team](https://github.com/muvaro2/FormFit). Saavan's recorded work includes the watch collector, collection timing and controls, watch/phone connectivity scaffolding, phone UI integration, data visualization integration, and Core ML pipeline integration. Teammate work includes model training, repetition processing, phone UI, and inference integration. These areas were collaborative; this list does not assert exclusive authorship.
+I developed FormFit with the [muvaro2/FormFit team](https://github.com/muvaro2/FormFit). I worked on the watch collector, collection timing and controls, watch-to-phone connectivity, and integration of the phone UI, data visualizations, and Core ML pipeline. My teammates worked on model training, repetition processing, the phone UI, and inference integration. We helped each other across these areas throughout the project.
 
 Examples from the preserved team history:
 
-- Saavan: `3abc4e8` (watch/phone connectivity), `9b216b6` (collector controls), `cfc47db` (phone UI and watch controls), `9ace180` (data visualization), `4bfe97a` (Core ML pipeline).
+- My commits: `3abc4e8` (watch/phone connectivity), `9b216b6` (collector controls), `cfc47db` (phone UI and watch controls), `9ace180` (data visualization), `4bfe97a` (Core ML pipeline).
 - `yuktha`: CNN model/training/export work, including `b5a3e14`, `0a56d94`, and `fa51ec0`.
 - Roshan Gunuganti: later UI and inference/model work on `codex-formfit-ui-watch-sync`, ending at `f1d5ed9`.
 - `Ithomas13`: repetition-processing work, including the September module and tests at `1bd8ad0`.
-- Additional contributors are retained in the original branch history. Exact shared and individual responsibilities will be refined with the team.
+- The original branch history includes additional contributors and more of our shared work.
 
 ## Repository history
 
-The original personal collector commits are preserved. The October 2026 consolidation retains team histories as merge ancestry, restores the fuller app from `codex-formfit-ui-watch-sync`, retains the portable personal `ml/` snapshot, and copies the September segmentation module without source changes. Other development branches are preserved under `team-history/` for reference. This is a documented assembly of existing work, not a claim that all branches were previously integrated.
+I've kept the original collector commits and the team's history in this repository. In October 2026, I brought in the fuller app from `codex-formfit-ui-watch-sync`, kept the portable `ml/` snapshot, and added the September segmentation module without changing its source. Other development branches are available under `team-history/`. The segmentation module still needs to be connected to the Swift app.
 
 See [provenance](docs/provenance.md) and [verification](docs/verification.md).
 

@@ -11,4 +11,4 @@ python3 -m pip install pytest
 python3 -m pytest -q
 ```
 
-The source test comments describe a separate evaluation on real recordings. Those recordings are not included here, and that evaluation has not been independently reproduced for this portfolio update.
+The tests included here use synthetic inputs. Comments also describe an evaluation on real recordings, but those recordings are not included, so that evaluation cannot be reproduced from this module alone.

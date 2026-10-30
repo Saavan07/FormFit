@@ -53,7 +53,7 @@ python -m pip install pytest
 python -m pytest -q signal-processing
 ```
 
-The `ml/` directory contains training code, data, labels, a checkpoint, and an exported model. Its README describes the workflow. Training writes model artifacts, so run it in a separate experiment checkout if you want to preserve the included snapshot. Training and accuracy evaluation were not rerun for this update.
+The `ml/` directory contains training code, data, labels, a checkpoint, and an exported model. Its README describes the workflow. Training writes model artifacts, so run it in a separate experiment checkout if you want to preserve the included snapshot. See [verification](docs/verification.md) for the recorded test results; the included model still needs evaluation on new recordings.
 
 ## My work and the team
 
@@ -76,5 +76,3 @@ See [provenance](docs/provenance.md) and [verification](docs/verification.md).
 ## Limitations
 
 The model and feedback are experimental. A successful build does not prove scoring accuracy, clinical validity, or dependable watch transfer. Motion preprocessing and the fallback score need evaluation on new recordings. The training loader uses overlapping windows and a random window split, which can mix windows from the same recording between train and validation sets. Do not interpret that validation alone as generalization to new people or sessions.
-
-No new blanket license is assigned by this update. Retain contributor and third-party notices.
